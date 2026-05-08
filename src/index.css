@@ -1,0 +1,93 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-game-bg text-game-text font-body;
+    min-height: 100dvh;
+    overscroll-behavior: none;
+  }
+
+  h1, h2, h3 {
+    @apply font-game;
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-game-card border border-game-border rounded-2xl;
+  }
+
+  .btn-primary {
+    @apply bg-game-gold text-black font-bold py-3 px-6 rounded-xl
+           active:scale-95 transition-all duration-150
+           hover:brightness-110 shadow-glow-gold;
+  }
+
+  .btn-secondary {
+    @apply bg-game-border text-game-text font-bold py-3 px-6 rounded-xl
+           active:scale-95 transition-all duration-150
+           hover:brightness-125;
+  }
+
+  .btn-danger {
+    @apply bg-game-danger text-white font-bold py-2 px-4 rounded-xl
+           active:scale-95 transition-all duration-150;
+  }
+
+  .btn-success {
+    @apply bg-game-success text-white font-bold py-2 px-4 rounded-xl
+           active:scale-95 transition-all duration-150;
+  }
+
+  .badge {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold;
+  }
+
+  .badge-pending {
+    @apply badge bg-game-pending/20 text-game-pending;
+  }
+
+  .badge-approved {
+    @apply badge bg-game-success/20 text-game-success;
+  }
+
+  .badge-rejected {
+    @apply badge bg-game-danger/20 text-game-danger;
+  }
+
+  .section-title {
+    @apply text-game-gold font-game text-xl tracking-wide;
+  }
+
+  .input {
+    @apply w-full bg-game-border border border-game-border rounded-xl px-4 py-3
+           text-game-text placeholder-game-muted focus:outline-none
+           focus:border-game-gold transition-colors;
+  }
+}
+
+/* Star background on home page */
+.stars-bg {
+  background-image:
+    radial-gradient(1px 1px at 20% 30%, rgba(255,255,255,0.6) 0%, transparent 100%),
+    radial-gradient(1px 1px at 60% 70%, rgba(255,255,255,0.4) 0%, transparent 100%),
+    radial-gradient(1px 1px at 80% 15%, rgba(255,255,255,0.5) 0%, transparent 100%),
+    radial-gradient(1px 1px at 40% 85%, rgba(255,255,255,0.3) 0%, transparent 100%),
+    radial-gradient(2px 2px at 10% 55%, rgba(255,255,255,0.4) 0%, transparent 100%),
+    radial-gradient(1px 1px at 90% 45%, rgba(255,255,255,0.5) 0%, transparent 100%),
+    radial-gradient(1px 1px at 55% 20%, rgba(255,255,255,0.3) 0%, transparent 100%),
+    radial-gradient(2px 2px at 70% 90%, rgba(255,255,255,0.4) 0%, transparent 100%),
+    radial-gradient(1px 1px at 30% 10%, rgba(255,255,255,0.5) 0%, transparent 100%),
+    radial-gradient(1px 1px at 5%  80%, rgba(255,255,255,0.3) 0%, transparent 100%);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #374151; border-radius: 2px; }
