@@ -10,7 +10,7 @@ export function PointBank() {
   const { username } = useParams<{ username: string }>()
   const navigate = useNavigate()
   const [transactions, setTransactions] = useState<PointTransaction[]>([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     fetchTransactions()

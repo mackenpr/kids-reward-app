@@ -24,7 +24,7 @@ const blank: EditingPrize = { name: '', description: '', prize_type: 'activity',
 export function PrizeManager() {
   const [prizes, setPrizes] = useState<Prize[]>([])
   const [editing, setEditing] = useState<EditingPrize | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)

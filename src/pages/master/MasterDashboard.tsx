@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { Layout } from '../../components/Layout'
-import { CheckSquare, Gift, ClipboardList, Trophy, BarChart2, Star } from 'lucide-react'
+import { CheckSquare, Gift, ClipboardList, Trophy, BarChart2, Star, RefreshCw } from 'lucide-react'
 
 interface KidStats {
   balance: number
@@ -15,72 +15,95 @@ export function MasterDashboard() {
   const [pendingRedemptions, setPendingRedemptions] = useState(0)
   const [camden, setCamden] = useState<KidStats>({ balance: 0, pendingTasks: 0 })
   const [ethan, setEthan] = useState<KidStats>({ balance: 0, pendingTasks: 0 })
-  const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
+  const mounted = useRef(true)
 
   useEffect(() => {
+    mounted.current = true
     fetchAll()
-
-    const channel = supabase
-      .channel('master-dashboard')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'task_completions' }, fetchAll)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'redemption_requests' }, fetchAll)
-      .subscribe()
-
-    return () => { supabase.removeChannel(channel) }
+    return () => { mounted.current = false }
   }, [])
 
   async function fetchAll() {
-    setLoading(true)
+    if (!mounted.current) return
+    setRefreshing(true)
+
+    // Run queries sequentially to avoid hammering connections
     try {
-      await Promise.all([fetchPending(), fetchKidStats('camden'), fetchKidStats('ethan')])
+      // Pending task completions count
+      const { count: tc } = await supabase
+        .from('task_completions')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'pending')
+      if (mounted.current) setPendingTasks(tc ?? 0)
+
+      // Pending redemptions count
+      const { count: rc } = await supabase
+        .from('redemption_requests')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'pending')
+      if (mounted.current) setPendingRedemptions(rc ?? 0)
+
+      // Camden stats
+      const { data: camdenTxns } = await supabase
+        .from('point_transactions')
+        .select('amount, type')
+        .eq('kid_username', 'camden')
+      const { count: camdenPending } = await supabase
+        .from('task_completions')
+        .select('*', { count: 'exact', head: true })
+        .eq('kid_username', 'camden')
+        .eq('status', 'pending')
+      if (mounted.current) {
+        const balance = Math.max(0, (camdenTxns ?? []).reduce((s, t) => s + (t.type === 'redeemed' ? -t.amount : t.amount), 0))
+        setCamden({ balance, pendingTasks: camdenPending ?? 0 })
+      }
+
+      // Ethan stats
+      const { data: ethanTxns } = await supabase
+        .from('point_transactions')
+        .select('amount, type')
+        .eq('kid_username', 'ethan')
+      const { count: ethanPending } = await supabase
+        .from('task_completions')
+        .select('*', { count: 'exact', head: true })
+        .eq('kid_username', 'ethan')
+        .eq('status', 'pending')
+      if (mounted.current) {
+        const balance = Math.max(0, (ethanTxns ?? []).reduce((s, t) => s + (t.type === 'redeemed' ? -t.amount : t.amount), 0))
+        setEthan({ balance, pendingTasks: ethanPending ?? 0 })
+      }
     } catch (e) {
-      console.error('fetchAll error:', e)
+      console.error('Dashboard fetch error:', e)
     } finally {
-      setLoading(false)
+      if (mounted.current) setRefreshing(false)
     }
-  }
-
-  async function fetchPending() {
-    const [{ count: tc }, { count: rc }] = await Promise.all([
-      supabase.from('task_completions').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
-      supabase.from('redemption_requests').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
-    ])
-    setPendingTasks(tc ?? 0)
-    setPendingRedemptions(rc ?? 0)
-  }
-
-  async function fetchKidStats(kid: 'camden' | 'ethan') {
-    const [{ data: txns }, { count: pending }] = await Promise.all([
-      supabase.from('point_transactions').select('amount, type').eq('kid_username', kid),
-      supabase.from('task_completions').select('*', { count: 'exact', head: true }).eq('kid_username', kid).eq('status', 'pending'),
-    ])
-    const balance = Math.max(0, (txns ?? []).reduce((s, t) => s + (t.type === 'redeemed' ? -t.amount : t.amount), 0))
-    const stats = { balance, pendingTasks: pending ?? 0 }
-    if (kid === 'camden') setCamden(stats)
-    else setEthan(stats)
   }
 
   const totalPending = pendingTasks + pendingRedemptions
 
   const quickActions = [
-    { label: 'Task Approvals',     icon: CheckSquare, path: '/master/approvals',    badge: pendingTasks,      color: 'text-game-camden' },
-    { label: 'Task Editor',        icon: ClipboardList,path: '/master/tasks',       badge: 0,                 color: 'text-game-ethan' },
-    { label: 'Redemptions',        icon: Gift,        path: '/master/redemptions',  badge: pendingRedemptions,color: 'text-game-gold' },
-    { label: 'Prizes',             icon: Trophy,      path: '/master/prizes',       badge: 0,                 color: 'text-game-master' },
-    { label: 'Reports',            icon: BarChart2,   path: '/master/reports',      badge: 0,                 color: 'text-game-pending' },
+    { label: 'Task Approvals',  icon: CheckSquare,   path: '/master/approvals',    badge: pendingTasks,       color: 'text-game-camden' },
+    { label: 'Task Editor',     icon: ClipboardList, path: '/master/tasks',        badge: 0,                  color: 'text-game-ethan' },
+    { label: 'Redemptions',     icon: Gift,          path: '/master/redemptions',  badge: pendingRedemptions, color: 'text-game-gold' },
+    { label: 'Prizes',          icon: Trophy,        path: '/master/prizes',       badge: 0,                  color: 'text-game-master' },
+    { label: 'Reports',         icon: BarChart2,     path: '/master/reports',      badge: 0,                  color: 'text-game-pending' },
   ]
-
-  if (loading) {
-    return (
-      <Layout title="Master HQ">
-        <div className="flex items-center justify-center h-64"><span className="text-4xl animate-bounce">👑</span></div>
-      </Layout>
-    )
-  }
 
   return (
     <Layout title="Master HQ">
       <div className="px-4 py-4 flex flex-col gap-5">
+
+        {/* Refresh button */}
+        <button
+          onClick={fetchAll}
+          disabled={refreshing}
+          className="self-end flex items-center gap-2 text-xs font-bold text-game-muted hover:text-game-text transition-colors disabled:opacity-40"
+        >
+          <RefreshCw size={14} className={refreshing ? 'animate-spin' : ''} />
+          {refreshing ? 'Loading…' : 'Refresh'}
+        </button>
+
         {/* Alert banner */}
         {totalPending > 0 && (
           <div
@@ -89,7 +112,9 @@ export function MasterDashboard() {
           >
             <div>
               <p className="font-bold text-game-pending">⚠️ Action needed!</p>
-              <p className="text-game-text-dim text-sm">{pendingTasks} task{pendingTasks !== 1 ? 's' : ''} + {pendingRedemptions} redemption{pendingRedemptions !== 1 ? 's' : ''} waiting</p>
+              <p className="text-game-text-dim text-sm">
+                {pendingTasks} task{pendingTasks !== 1 ? 's' : ''} + {pendingRedemptions} redemption{pendingRedemptions !== 1 ? 's' : ''} waiting
+              </p>
             </div>
             <span className="font-game text-3xl text-game-pending">{totalPending}</span>
           </div>
@@ -100,10 +125,10 @@ export function MasterDashboard() {
           <h2 className="section-title mb-3">Kids Overview</h2>
           <div className="grid grid-cols-2 gap-3">
             {[
-              { name: 'Camden', username: 'camden', stats: camden, emoji: '⚔️', color: 'game-camden' },
-              { name: 'Ethan',  username: 'ethan',  stats: ethan,  emoji: '⚡', color: 'game-ethan' },
+              { name: 'Camden', stats: camden, emoji: '⚔️', color: 'game-camden' },
+              { name: 'Ethan',  stats: ethan,  emoji: '⚡', color: 'game-ethan' },
             ].map(k => (
-              <div key={k.username} className={`card p-4 border-${k.color}/30 bg-${k.color}/5`}>
+              <div key={k.name} className={`card p-4 border-${k.color}/30 bg-${k.color}/5`}>
                 <div className="flex items-center gap-2 mb-3">
                   <span className="text-2xl">{k.emoji}</span>
                   <p className={`font-game text-xl text-${k.color}`}>{k.name}</p>
@@ -114,9 +139,7 @@ export function MasterDashboard() {
                 </div>
                 <p className="text-game-text-dim text-xs">pts balance</p>
                 {k.stats.pendingTasks > 0 && (
-                  <p className="text-game-pending text-xs font-bold mt-2">
-                    {k.stats.pendingTasks} pending ⏳
-                  </p>
+                  <p className="text-game-pending text-xs font-bold mt-2">{k.stats.pendingTasks} pending ⏳</p>
                 )}
               </div>
             ))}
@@ -138,9 +161,7 @@ export function MasterDashboard() {
                   <span className="font-bold text-game-text">{label}</span>
                 </div>
                 {badge > 0 && (
-                  <span className="bg-game-danger text-white text-xs font-bold px-2 py-1 rounded-full">
-                    {badge}
-                  </span>
+                  <span className="bg-game-danger text-white text-xs font-bold px-2 py-1 rounded-full">{badge}</span>
                 )}
               </button>
             ))}

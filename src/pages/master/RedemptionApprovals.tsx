@@ -8,7 +8,7 @@ import type { RedemptionRequest } from '../../types'
 export function RedemptionApprovals() {
   const [pending, setPending] = useState<RedemptionRequest[]>([])
   const [history, setHistory] = useState<RedemptionRequest[]>([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [processing, setProcessing] = useState<string | null>(null)
   const [rejectReason, setRejectReason] = useState<Record<string, string>>({})
 

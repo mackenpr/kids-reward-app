@@ -11,7 +11,7 @@ interface CompletionWithTask extends TaskCompletion { task?: Task }
 export function Reports() {
   const [transactions, setTransactions] = useState<PointTransaction[]>([])
   const [completions, setCompletions] = useState<CompletionWithTask[]>([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => { fetchAll() }, [])
 

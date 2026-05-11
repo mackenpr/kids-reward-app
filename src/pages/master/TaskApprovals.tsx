@@ -11,7 +11,7 @@ interface CompletionWithTask extends TaskCompletion {
 
 export function TaskApprovals() {
   const [pending, setPending] = useState<CompletionWithTask[]>([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [processing, setProcessing] = useState(false)
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [rejectReason, setRejectReason] = useState<Record<string, string>>({})

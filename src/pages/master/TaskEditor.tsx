@@ -26,7 +26,7 @@ const blank: EditingTask = { title: '', description: '', category: 'daily', poin
 export function TaskEditor() {
   const [tasks, setTasks] = useState<Task[]>([])
   const [editing, setEditing] = useState<EditingTask | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [filterCat, setFilterCat] = useState<TaskCategory | 'all'>('all')
   const [error, setError] = useState('')

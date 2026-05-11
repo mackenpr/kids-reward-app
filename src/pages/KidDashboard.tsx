@@ -25,7 +25,7 @@ export function KidDashboard() {
   const [completions, setCompletions] = useState<TaskCompletion[]>([])
   const [points, setPoints] = useState(0)
   const [newApprovals, setNewApprovals] = useState(0)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [activeTab, setActiveTab] = useState<'own' | 'sibling'>('own')
   const [selectedDate, setSelectedDate] = useState(new Date())
