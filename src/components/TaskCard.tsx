@@ -1,4 +1,4 @@
-import { Star, Clock, CheckCircle, XCircle, AlertCircle } from 'lucide-react'
+import { Clock, CheckCircle, XCircle } from 'lucide-react'
 import type { Task, TaskCompletion } from '../types'
 
 interface TaskCardProps {
@@ -27,10 +27,13 @@ const categoryLabels: Record<string, string> = {
 export function TaskCard({ task, completion, canComplete, onComplete, loading, viewOnly, selected, accentColor }: TaskCardProps) {
   const status = completion?.status
 
+  const hasSplit = task.dollar_points > 0 || task.quality_points > 0
+
   return (
     <div className={`card p-4 flex flex-col gap-3 transition-all ${
       status === 'approved' ? 'opacity-60' : ''
     } ${selected ? `border-${accentColor ?? 'game-gold'}/60 bg-${accentColor ?? 'game-gold'}/5` : ''}`}>
+
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-1">
@@ -44,15 +47,29 @@ export function TaskCard({ task, completion, canComplete, onComplete, loading, v
           )}
         </div>
 
-        {/* Points badge */}
-        <div className="flex flex-col items-center justify-center bg-game-gold/10 border border-game-gold/30 rounded-xl px-3 py-2 min-w-[60px]">
-          <Star size={14} className="text-game-gold" fill="currentColor" />
-          <span className="font-game text-game-gold text-lg leading-tight">{task.points}</span>
-          <span className="text-game-gold text-xs">pts</span>
+        {/* Points badges */}
+        <div className="flex flex-col gap-1 items-end">
+          {hasSplit ? (
+            <>
+              <div className="flex items-center gap-1 bg-game-gold/10 border border-game-gold/30 rounded-lg px-2 py-1">
+                <span className="text-xs">💰</span>
+                <span className="font-game text-game-gold text-base">{task.dollar_points}</span>
+              </div>
+              <div className="flex items-center gap-1 bg-game-master/10 border border-game-master/30 rounded-lg px-2 py-1">
+                <span className="text-xs">⭐</span>
+                <span className="font-game text-game-master text-base">{task.quality_points}</span>
+              </div>
+            </>
+          ) : (
+            <div className="flex flex-col items-center justify-center bg-game-gold/10 border border-game-gold/30 rounded-xl px-3 py-2 min-w-[60px]">
+              <span className="font-game text-game-gold text-lg leading-tight">{task.points}</span>
+              <span className="text-game-gold text-xs">pts</span>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Status / action */}
+      {/* Status */}
       {!viewOnly && (
         <div>
           {status === 'approved' && (
@@ -73,29 +90,6 @@ export function TaskCard({ task, completion, canComplete, onComplete, loading, v
               {completion?.rejection_reason && (
                 <p className="text-xs text-game-text-dim">{completion.rejection_reason}</p>
               )}
-              {canComplete && (
-                <button
-                  onClick={onComplete}
-                  disabled={loading}
-                  className="btn-primary text-sm py-2"
-                >
-                  Try Again
-                </button>
-              )}
-            </div>
-          )}
-          {!status && canComplete && (
-            <button
-              onClick={onComplete}
-              disabled={loading}
-              className="w-full btn-primary text-sm py-2 disabled:opacity-50"
-            >
-              {loading ? 'Submitting…' : '✅ Mark Complete'}
-            </button>
-          )}
-          {!status && !canComplete && (
-            <div className="flex items-center gap-2 text-game-muted text-sm">
-              <AlertCircle size={14} /> Not your task
             </div>
           )}
         </div>

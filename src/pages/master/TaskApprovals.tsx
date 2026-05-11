@@ -50,13 +50,32 @@ export function TaskApprovals() {
     await supabase.from('task_completions')
       .update({ status: 'approved', approved_at: new Date().toISOString() })
       .eq('id', completion.id)
-    await supabase.from('point_transactions').insert({
-      kid_username: completion.kid_username,
-      amount: completion.task.points,
-      type: 'earned',
-      description: `Completed: ${completion.task.title}`,
-      related_completion_id: completion.id,
-    })
+
+    const dollarPts  = completion.task.dollar_points  ?? completion.task.points
+    const qualityPts = completion.task.quality_points ?? 0
+
+    // Award dollar points
+    if (dollarPts > 0) {
+      await supabase.from('point_transactions').insert({
+        kid_username: completion.kid_username,
+        amount: dollarPts,
+        type: 'earned',
+        currency: 'dollar',
+        description: `Completed: ${completion.task.title}`,
+        related_completion_id: completion.id,
+      })
+    }
+    // Award quality time points
+    if (qualityPts > 0) {
+      await supabase.from('point_transactions').insert({
+        kid_username: completion.kid_username,
+        amount: qualityPts,
+        type: 'earned',
+        currency: 'quality_time',
+        description: `Completed: ${completion.task.title}`,
+        related_completion_id: completion.id,
+      })
+    }
   }
 
   // --- Single reject ---
@@ -221,9 +240,13 @@ export function TaskApprovals() {
                         <span className={`font-game text-lg ${kidColor(c.kid_username)}`}>
                           {kidEmoji(c.kid_username)} {c.kid_username === 'camden' ? 'Camden' : 'Ethan'}
                         </span>
-                        <div className="text-right">
-                          <p className="font-game text-2xl text-game-gold">{c.task.points}</p>
-                          <p className="text-game-text-dim text-xs">pts</p>
+                        <div className="flex gap-2">
+                          <div className="text-right">
+                            <p className="font-game text-lg text-game-gold">{c.task.dollar_points ?? c.task.points} 💰</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-game text-lg text-game-master">{c.task.quality_points ?? 0} ⭐</p>
+                          </div>
                         </div>
                       </div>
                       <p className="font-bold text-game-text mt-0.5">{c.task.title}</p>

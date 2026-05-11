@@ -4,6 +4,7 @@ export type TaskCategory = 'daily' | 'weekly' | 'adhoc'
 export type CompletionStatus = 'pending' | 'approved' | 'rejected'
 export type PrizeType = 'activity' | 'dollar' | 'custom'
 export type TransactionType = 'earned' | 'redeemed' | 'bonus'
+export type Currency = 'dollar' | 'quality_time'
 
 export interface Profile {
   id: string
@@ -19,7 +20,9 @@ export interface Task {
   title: string
   description?: string
   category: TaskCategory
-  points: number
+  points: number          // legacy — kept for compatibility
+  dollar_points: number
+  quality_points: number
   assigned_to: KidUsername | 'both'
   is_active: boolean
   created_at: string
@@ -34,6 +37,7 @@ export interface TaskCompletion {
   submitted_at: string
   approved_at?: string
   rejection_reason?: string
+  completion_date?: string
   task?: Task
 }
 
@@ -42,6 +46,7 @@ export interface PointTransaction {
   kid_username: KidUsername
   amount: number
   type: TransactionType
+  currency: Currency
   description: string
   related_completion_id?: string
   related_redemption_id?: string
@@ -53,6 +58,7 @@ export interface RedemptionRequest {
   kid_username: KidUsername
   points_amount: number
   prize_description: string
+  currency: Currency
   status: CompletionStatus
   submitted_at: string
   approved_at?: string
@@ -66,6 +72,7 @@ export interface Prize {
   points_cost?: number
   prize_type: PrizeType
   dollar_value?: number
+  currency: Currency
   is_active: boolean
   created_at: string
 }
@@ -83,4 +90,13 @@ export interface AppUser {
   display_name: string
   role: Role
   email: string
+}
+
+export interface PointBalances {
+  dollarEarned: number
+  dollarRedeemed: number
+  dollarBalance: number
+  qualityEarned: number
+  qualityRedeemed: number
+  qualityBalance: number
 }

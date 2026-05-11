@@ -3,8 +3,9 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { startOfDay, startOfWeek, startOfMonth, format } from 'date-fns'
 import { supabase } from '../lib/supabase'
 import { Layout } from '../components/Layout'
+import { calcBalances, toDollars, activitiesAvailable, POINTS_PER_DOLLAR } from '../lib/points'
 import type { PointTransaction } from '../types'
-import { TrendingUp, Gift } from 'lucide-react'
+import { Gift } from 'lucide-react'
 
 export function PointBank() {
   const { username } = useParams<{ username: string }>()
@@ -12,9 +13,7 @@ export function PointBank() {
   const [transactions, setTransactions] = useState<PointTransaction[]>([])
   const [loading, setLoading] = useState(false)
 
-  useEffect(() => {
-    fetchTransactions()
-  }, [username])
+  useEffect(() => { fetchTransactions() }, [username])
 
   async function fetchTransactions() {
     setLoading(true)
@@ -24,94 +23,113 @@ export function PointBank() {
         .select('*')
         .eq('kid_username', username)
         .order('created_at', { ascending: false })
-      setTransactions(data ?? [])
+      setTransactions((data as PointTransaction[]) ?? [])
     } catch (e) {
-      console.error('fetchTransactions error:', e)
+      console.error(e)
     } finally {
       setLoading(false)
     }
   }
+
+  const balances = calcBalances(transactions)
+  const accentClass = username === 'camden' ? 'text-game-camden' : 'text-game-ethan'
 
   const now = new Date()
   const todayStart  = startOfDay(now).toISOString()
   const weekStart   = startOfWeek(now, { weekStartsOn: 1 }).toISOString()
   const monthStart  = startOfMonth(now).toISOString()
 
-  function sumInRange(after: string, types: string[]) {
+  function earned(after: string, currency: 'dollar' | 'quality_time') {
     return transactions
-      .filter(t => t.created_at >= after && types.includes(t.type))
+      .filter(t => t.currency === currency && t.type !== 'redeemed' && t.created_at >= after)
       .reduce((s, t) => s + t.amount, 0)
-  }
-
-  const totalEarned   = transactions.filter(t => t.type !== 'redeemed').reduce((s, t) => s + t.amount, 0)
-  const totalRedeemed = transactions.filter(t => t.type === 'redeemed').reduce((s, t) => s + t.amount, 0)
-  const balance       = Math.max(0, totalEarned - totalRedeemed)
-
-  const todayEarned  = sumInRange(todayStart,  ['earned', 'bonus'])
-  const weekEarned   = sumInRange(weekStart,   ['earned', 'bonus'])
-  const monthEarned  = sumInRange(monthStart,  ['earned', 'bonus'])
-
-  const accentClass = username === 'camden' ? 'text-game-camden' : 'text-game-ethan'
-  const glowClass   = username === 'camden' ? 'shadow-glow-blue' : 'shadow-glow-green'
-
-  if (loading) {
-    return (
-      <Layout title="Point Bank">
-        <div className="flex items-center justify-center h-64">
-          <span className="text-4xl animate-bounce">⭐</span>
-        </div>
-      </Layout>
-    )
   }
 
   return (
     <Layout title="Point Bank">
       <div className="px-4 py-4 flex flex-col gap-5">
-        {/* Balance */}
-        <div className={`card p-6 text-center bg-gradient-to-b from-game-gold/10 to-transparent border-game-gold/30 ${glowClass}`}>
-          <p className="text-game-text-dim text-xs font-bold uppercase tracking-widest mb-1">Current Balance</p>
-          <p className={`font-game text-7xl ${accentClass} drop-shadow-lg`}>
-            {balance.toLocaleString()}
-          </p>
-          <p className="text-game-gold text-2xl mt-1">⭐ points</p>
-          <div className="flex justify-center gap-6 mt-4 pt-4 border-t border-game-border">
-            <div className="text-center">
-              <p className="text-game-success font-bold">{totalEarned.toLocaleString()}</p>
-              <p className="text-game-text-dim text-xs">Total Earned</p>
-            </div>
-            <div className="text-center">
-              <p className="text-game-danger font-bold">{totalRedeemed.toLocaleString()}</p>
-              <p className="text-game-text-dim text-xs">Redeemed</p>
-            </div>
-          </div>
-        </div>
 
-        {/* Stats */}
-        <div>
-          <h2 className="section-title mb-3 flex items-center gap-2">
-            <TrendingUp size={18} /> Earnings
-          </h2>
-          <div className="grid grid-cols-3 gap-3">
+        {/* Dollar Bank */}
+        <div className="card p-5 border-game-gold/40 bg-game-gold/5">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-2xl">💰</span>
+            <h2 className="font-game text-2xl text-game-gold">Dollar Bank</h2>
+          </div>
+          <p className={`font-game text-6xl ${accentClass}`}>
+            {toDollars(balances.dollarBalance)}
+          </p>
+          <p className="text-game-text-dim text-sm mt-1">
+            {balances.dollarBalance} pts · {toDollars(balances.dollarRedeemed)} spent
+          </p>
+
+          <div className="grid grid-cols-3 gap-2 mt-4">
             {[
-              { label: 'Today',  value: todayEarned },
-              { label: 'Week',   value: weekEarned },
-              { label: 'Month',  value: monthEarned },
+              { label: 'Today',  val: earned(todayStart,  'dollar') },
+              { label: 'Week',   val: earned(weekStart,   'dollar') },
+              { label: 'Month',  val: earned(monthStart,  'dollar') },
             ].map(s => (
-              <div key={s.label} className="card p-3 text-center">
-                <p className={`font-game text-2xl ${accentClass}`}>{s.value}</p>
-                <p className="text-game-text-dim text-xs font-bold">{s.label}</p>
+              <div key={s.label} className="bg-game-border rounded-xl p-2 text-center">
+                <p className="font-game text-lg text-game-gold">{toDollars(s.val)}</p>
+                <p className="text-game-text-dim text-xs">{s.label}</p>
               </div>
             ))}
           </div>
+
+          <button
+            onClick={() => navigate(`/kid/${username}/redeem?tab=dollar`)}
+            className="btn-primary w-full mt-4 flex items-center justify-center gap-2"
+          >
+            <Gift size={16} /> Redeem for Cash
+          </button>
         </div>
 
-        {/* Redeem button */}
-        <button
-          onClick={() => navigate(`/kid/${username}/redeem`)}
-          className="btn-primary flex items-center justify-center gap-2 text-lg py-4"
-        >
-          <Gift size={20} /> Redeem Points
-        </button>
+        {/* Quality Time Bank */}
+        <div className="card p-5 border-game-master/40 bg-game-master/5">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-2xl">⭐</span>
+            <h2 className="font-game text-2xl text-game-master">Activity Bank</h2>
+          </div>
+          <p className={`font-game text-6xl ${accentClass}`}>
+            {balances.qualityBalance}
+          </p>
+          <p className="text-game-text-dim text-sm mt-1">
+            pts · {activitiesAvailable(balances.qualityBalance)}
+          </p>
+
+          {/* Progress bar to next activity (240 pts) */}
+          <div className="mt-3">
+            <div className="flex justify-between text-xs font-bold text-game-text-dim mb-1">
+              <span>Next activity</span>
+              <span>{Math.min(balances.qualityBalance, 240)}/240 pts</span>
+            </div>
+            <div className="w-full bg-game-border rounded-full h-3">
+              <div
+                className="h-3 rounded-full bg-game-master transition-all"
+                style={{ width: `${Math.min(100, (balances.qualityBalance / 240) * 100)}%` }}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-2 mt-4">
+            {[
+              { label: 'Today',  val: earned(todayStart,  'quality_time') },
+              { label: 'Week',   val: earned(weekStart,   'quality_time') },
+              { label: 'Month',  val: earned(monthStart,  'quality_time') },
+            ].map(s => (
+              <div key={s.label} className="bg-game-border rounded-xl p-2 text-center">
+                <p className="font-game text-lg text-game-master">{s.val}</p>
+                <p className="text-game-text-dim text-xs">{s.label}</p>
+              </div>
+            ))}
+          </div>
+
+          <button
+            onClick={() => navigate(`/kid/${username}/redeem?tab=quality`)}
+            className="w-full mt-4 py-3 rounded-xl font-bold bg-game-master/20 text-game-master border border-game-master/30 hover:brightness-110 transition-all flex items-center justify-center gap-2"
+          >
+            <Gift size={16} /> Redeem for Activity
+          </button>
+        </div>
 
         {/* Transaction history */}
         <div>
@@ -128,11 +146,12 @@ export function PointBank() {
                       {format(new Date(t.created_at), 'MMM d, yyyy')}
                     </p>
                   </div>
-                  <span className={`font-game text-xl ${
-                    t.type === 'redeemed' ? 'text-game-danger' : 'text-game-success'
-                  }`}>
-                    {t.type === 'redeemed' ? '-' : '+'}{t.amount} ⭐
-                  </span>
+                  <div className="flex items-center gap-1">
+                    <span className={`font-game text-lg ${t.type === 'redeemed' ? 'text-game-danger' : t.currency === 'dollar' ? 'text-game-gold' : 'text-game-master'}`}>
+                      {t.type === 'redeemed' ? '-' : '+'}{t.amount}
+                    </span>
+                    <span className="text-xs">{t.currency === 'dollar' ? '💰' : '⭐'}</span>
+                  </div>
                 </div>
               ))}
             </div>

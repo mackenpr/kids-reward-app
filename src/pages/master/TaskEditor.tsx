@@ -17,11 +17,12 @@ interface EditingTask {
   title: string
   description: string
   category: TaskCategory
-  points: number
+  dollar_points: number
+  quality_points: number
   assigned_to: string
 }
 
-const blank: EditingTask = { title: '', description: '', category: 'daily', points: 10, assigned_to: 'both' }
+const blank: EditingTask = { title: '', description: '', category: 'daily', dollar_points: 6, quality_points: 6, assigned_to: 'both' }
 
 export function TaskEditor() {
   const [tasks, setTasks] = useState<Task[]>([])
@@ -49,27 +50,27 @@ export function TaskEditor() {
   async function saveTask() {
     if (!editing) return
     if (!editing.title.trim()) { setError('Title is required.'); return }
-    if (editing.points < 1) { setError('Points must be at least 1.'); return }
+    if (editing.dollar_points < 0 || editing.quality_points < 0) { setError('Points cannot be negative.'); return }
 
     setSaving(true)
     setError('')
 
+    const payload = {
+      title: editing.title.trim(),
+      description: editing.description.trim() || null,
+      category: editing.category,
+      dollar_points: editing.dollar_points,
+      quality_points: editing.quality_points,
+      points: editing.dollar_points + editing.quality_points,
+      assigned_to: editing.assigned_to,
+    }
+
     if (editing.id) {
-      await supabase.from('tasks').update({
-        title: editing.title.trim(),
-        description: editing.description.trim() || null,
-        category: editing.category,
-        points: editing.points,
-        assigned_to: editing.assigned_to,
-        updated_at: new Date().toISOString(),
-      }).eq('id', editing.id)
+      await supabase.from('tasks').update({ ...payload, updated_at: new Date().toISOString() }).eq('id', editing.id)
     } else {
       await supabase.from('tasks').insert({
         title: editing.title.trim(),
-        description: editing.description.trim() || null,
-        category: editing.category,
-        points: editing.points,
-        assigned_to: editing.assigned_to,
+        ...payload,
       })
     }
 
@@ -137,26 +138,22 @@ export function TaskEditor() {
               value={editing.description}
               onChange={e => setEditing(t => t && ({ ...t, description: e.target.value }))}
             />
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-3 gap-3">
               <div>
                 <label className="text-game-text-dim text-xs font-bold uppercase tracking-wider mb-1 block">Category</label>
-                <select
-                  className="input"
-                  value={editing.category}
-                  onChange={e => setEditing(t => t && ({ ...t, category: e.target.value as TaskCategory }))}
-                >
+                <select className="input" value={editing.category} onChange={e => setEditing(t => t && ({ ...t, category: e.target.value as TaskCategory }))}>
                   {CATEGORIES.map(c => <option key={c} value={c}>{CATEGORY_LABELS[c]}</option>)}
                 </select>
               </div>
               <div>
-                <label className="text-game-text-dim text-xs font-bold uppercase tracking-wider mb-1 block">Points</label>
-                <input
-                  className="input"
-                  type="number"
-                  min="1"
-                  value={editing.points}
-                  onChange={e => setEditing(t => t && ({ ...t, points: parseInt(e.target.value) || 1 }))}
-                />
+                <label className="text-game-text-dim text-xs font-bold uppercase tracking-wider mb-1 block">💰 Dollar pts</label>
+                <input className="input" type="number" min="0" value={editing.dollar_points}
+                  onChange={e => setEditing(t => t && ({ ...t, dollar_points: parseInt(e.target.value) || 0 }))} />
+              </div>
+              <div>
+                <label className="text-game-text-dim text-xs font-bold uppercase tracking-wider mb-1 block">⭐ Activity pts</label>
+                <input className="input" type="number" min="0" value={editing.quality_points}
+                  onChange={e => setEditing(t => t && ({ ...t, quality_points: parseInt(e.target.value) || 0 }))} />
               </div>
             </div>
             <div>
@@ -190,7 +187,8 @@ export function TaskEditor() {
               <div key={task.id} className={`card p-3 flex items-center gap-3 ${!task.is_active ? 'opacity-50' : ''}`}>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="text-game-gold font-game">{task.points}⭐</span>
+                    <span className="text-game-gold font-game text-xs">💰{task.dollar_points ?? 0}</span>
+                    <span className="text-game-master font-game text-xs">⭐{task.quality_points ?? 0}</span>
                     <span className="text-game-text-dim text-xs capitalize">{task.category}</span>
                     <span className="text-game-text-dim text-xs">· {task.assigned_to === 'both' ? 'Both' : task.assigned_to}</span>
                   </div>
@@ -204,7 +202,7 @@ export function TaskEditor() {
                       ? <ToggleRight size={20} className="text-game-success" />
                       : <ToggleLeft size={20} className="text-game-muted" />}
                   </button>
-                  <button onClick={() => setEditing({ id: task.id, title: task.title, description: task.description ?? '', category: task.category, points: task.points, assigned_to: task.assigned_to })}
+                  <button onClick={() => setEditing({ id: task.id, title: task.title, description: task.description ?? '', category: task.category, dollar_points: task.dollar_points ?? 0, quality_points: task.quality_points ?? 0, assigned_to: task.assigned_to })}
                     className="p-2 hover:brightness-125 transition-all">
                     <Pencil size={16} className="text-game-camden" />
                   </button>
