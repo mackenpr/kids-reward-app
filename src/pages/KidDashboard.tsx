@@ -51,8 +51,13 @@ export function KidDashboard() {
 
   async function fetchAll() {
     setLoading(true)
-    await Promise.all([fetchTasks(), fetchCompletions(), fetchPoints()])
-    setLoading(false)
+    try {
+      await Promise.all([fetchTasks(), fetchCompletions(), fetchPoints()])
+    } catch (e) {
+      console.error('fetchAll error:', e)
+    } finally {
+      setLoading(false)
+    }
   }
 
   async function fetchTasks() {

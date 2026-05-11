@@ -31,8 +31,13 @@ export function MasterDashboard() {
 
   async function fetchAll() {
     setLoading(true)
-    await Promise.all([fetchPending(), fetchKidStats('camden'), fetchKidStats('ethan')])
-    setLoading(false)
+    try {
+      await Promise.all([fetchPending(), fetchKidStats('camden'), fetchKidStats('ethan')])
+    } catch (e) {
+      console.error('fetchAll error:', e)
+    } finally {
+      setLoading(false)
+    }
   }
 
   async function fetchPending() {

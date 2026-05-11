@@ -29,15 +29,19 @@ export function TaskApprovals() {
 
   async function fetchPending() {
     setLoading(true)
-    const { data } = await supabase
-      .from('task_completions')
-      .select('*, task:tasks(*)')
-      .eq('status', 'pending')
-      .order('kid_username')
-      .order('submitted_at', { ascending: true })
-    setPending((data as CompletionWithTask[]) ?? [])
-    setSelectedIds([])
-    setLoading(false)
+    try {
+      const { data } = await supabase
+        .from('task_completions')
+        .select('*, task:tasks(*)')
+        .eq('status', 'pending')
+        .order('kid_username')
+        .order('submitted_at', { ascending: true })
+      setPending((data as CompletionWithTask[]) ?? [])
+      setSelectedIds([])
+    } catch (e) {
+      console.error('fetchPending error:', e)
+    } finally {
+      setLoading(false)
   }
 
   // --- Single approve ---

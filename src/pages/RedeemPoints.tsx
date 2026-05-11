@@ -25,8 +25,13 @@ export function RedeemPoints() {
 
   async function fetchAll() {
     setLoading(true)
-    await Promise.all([fetchPrizes(), fetchRedemptions(), fetchBalance()])
-    setLoading(false)
+    try {
+      await Promise.all([fetchPrizes(), fetchRedemptions(), fetchBalance()])
+    } catch (e) {
+      console.error('fetchAll error:', e)
+    } finally {
+      setLoading(false)
+    }
   }
 
   async function fetchPrizes() {

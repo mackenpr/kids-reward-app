@@ -17,13 +17,18 @@ export function Reports() {
 
   async function fetchAll() {
     setLoading(true)
-    const [{ data: txns }, { data: comps }] = await Promise.all([
-      supabase.from('point_transactions').select('*').order('created_at', { ascending: false }),
-      supabase.from('task_completions').select('*, task:tasks(*)').order('submitted_at', { ascending: false }),
-    ])
-    setTransactions(txns ?? [])
-    setCompletions((comps as CompletionWithTask[]) ?? [])
-    setLoading(false)
+    try {
+      const [{ data: txns }, { data: comps }] = await Promise.all([
+        supabase.from('point_transactions').select('*').order('created_at', { ascending: false }),
+        supabase.from('task_completions').select('*, task:tasks(*)').order('submitted_at', { ascending: false }),
+      ])
+      setTransactions(txns ?? [])
+      setCompletions((comps as CompletionWithTask[]) ?? [])
+    } catch (e) {
+      console.error('fetchAll error:', e)
+    } finally {
+      setLoading(false)
+    }
   }
 
   function exportToExcel() {

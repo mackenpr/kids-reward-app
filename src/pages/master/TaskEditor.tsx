@@ -36,9 +36,14 @@ export function TaskEditor() {
 
   async function fetchTasks() {
     setLoading(true)
-    const { data } = await supabase.from('tasks').select('*').order('category').order('title')
-    setTasks(data ?? [])
-    setLoading(false)
+    try {
+      const { data } = await supabase.from('tasks').select('*').order('category').order('title')
+      setTasks(data ?? [])
+    } catch (e) {
+      console.error('fetchTasks error:', e)
+    } finally {
+      setLoading(false)
+    }
   }
 
   async function saveTask() {

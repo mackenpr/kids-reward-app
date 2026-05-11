@@ -18,13 +18,18 @@ export function PointBank() {
 
   async function fetchTransactions() {
     setLoading(true)
-    const { data } = await supabase
-      .from('point_transactions')
-      .select('*')
-      .eq('kid_username', username)
-      .order('created_at', { ascending: false })
-    setTransactions(data ?? [])
-    setLoading(false)
+    try {
+      const { data } = await supabase
+        .from('point_transactions')
+        .select('*')
+        .eq('kid_username', username)
+        .order('created_at', { ascending: false })
+      setTransactions(data ?? [])
+    } catch (e) {
+      console.error('fetchTransactions error:', e)
+    } finally {
+      setLoading(false)
+    }
   }
 
   const now = new Date()
