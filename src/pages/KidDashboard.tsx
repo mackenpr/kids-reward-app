@@ -1,18 +1,19 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { startOfDay, startOfWeek } from 'date-fns'
+import { format, startOfWeek, endOfWeek } from 'date-fns'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { Layout } from '../components/Layout'
 import { TaskCard } from '../components/TaskCard'
-import type { Task, TaskCompletion, KidUsername, TaskCategory } from '../types'
-import { Bell } from 'lucide-react'
+import { DateNavigator } from '../components/DateNavigator'
+import type { Task, TaskCompletion, TaskCategory } from '../types'
+import { Bell, CheckSquare, Square, Send } from 'lucide-react'
 
 const CATEGORY_ORDER: TaskCategory[] = ['daily', 'weekly', 'adhoc']
 const CATEGORY_LABELS: Record<TaskCategory, string> = {
-  daily: '📅 Daily Tasks',
+  daily:  '📅 Daily Tasks',
   weekly: '📆 Weekly Tasks',
-  adhoc: '⚡ Special Tasks',
+  adhoc:  '⚡ Special Tasks',
 }
 
 export function KidDashboard() {
@@ -25,23 +26,28 @@ export function KidDashboard() {
   const [points, setPoints] = useState(0)
   const [newApprovals, setNewApprovals] = useState(0)
   const [loading, setLoading] = useState(true)
-  const [submitting, setSubmitting] = useState<string | null>(null)
+  const [submitting, setSubmitting] = useState(false)
   const [activeTab, setActiveTab] = useState<'own' | 'sibling'>('own')
+  const [selectedDate, setSelectedDate] = useState(new Date())
+  const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([])
+  const [submitSuccess, setSubmitSuccess] = useState(false)
 
   const viewUsername = activeTab === 'own' ? username! : (username === 'camden' ? 'ethan' : 'camden')
-  const viewDisplayName = viewUsername === 'camden' ? 'Camden' : 'Ethan'
+  const accentColor  = username === 'camden' ? 'game-camden' : 'game-ethan'
+  const siblingName  = username === 'camden' ? 'Ethan' : 'Camden'
 
   useEffect(() => {
     fetchAll()
-
     const channel = supabase
       .channel('kid-dashboard')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'task_completions' }, fetchAll)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'point_transactions' }, fetchPoints)
       .subscribe()
-
     return () => { supabase.removeChannel(channel) }
   }, [username])
+
+  // Clear selection when date changes
+  useEffect(() => { setSelectedTaskIds([]) }, [selectedDate])
 
   async function fetchAll() {
     setLoading(true)
@@ -54,7 +60,6 @@ export function KidDashboard() {
       .from('tasks')
       .select('*')
       .eq('is_active', true)
-      .or(`assigned_to.eq.${username},assigned_to.eq.both`)
       .order('category')
     setTasks(data ?? [])
   }
@@ -72,15 +77,10 @@ export function KidDashboard() {
       .from('point_transactions')
       .select('amount, type, created_at')
       .eq('kid_username', username)
-
     if (data) {
       const lastSeen = localStorage.getItem(`lastSeen_${username}`) ?? '1970-01-01'
-      const newOnes = data.filter(t => t.type === 'earned' && t.created_at > lastSeen)
-      setNewApprovals(newOnes.length)
-
-      const total = data.reduce((sum, t) => {
-        return sum + (t.type === 'redeemed' ? -t.amount : t.amount)
-      }, 0)
+      setNewApprovals(data.filter(t => t.type === 'earned' && t.created_at > lastSeen).length)
+      const total = data.reduce((s, t) => s + (t.type === 'redeemed' ? -t.amount : t.amount), 0)
       setPoints(Math.max(0, total))
     }
   }
@@ -90,36 +90,37 @@ export function KidDashboard() {
     setNewApprovals(0)
   }
 
-  function getCompletion(taskId: string): TaskCompletion | undefined {
-    const now = new Date()
-    const todayStart = startOfDay(now).toISOString()
-    const weekStart = startOfWeek(now, { weekStartsOn: 1 }).toISOString()
+  // Get completion for a task on the selected date
+  function getCompletion(taskId: string, kidUser: string): TaskCompletion | undefined {
+    const dateStr  = format(selectedDate, 'yyyy-MM-dd')
+    const weekStart = startOfWeek(selectedDate, { weekStartsOn: 1 }).toISOString()
+    const weekEnd   = endOfWeek(selectedDate,   { weekStartsOn: 1 }).toISOString()
+    const task      = tasks.find(t => t.id === taskId)
+    if (!task) return undefined
 
     return completions
-      .filter(c => c.task_id === taskId)
+      .filter(c => c.task_id === taskId && c.kid_username === kidUser && c.status !== 'rejected')
       .find(c => {
-        const task = tasks.find(t => t.id === taskId)
-        if (!task) return false
-        if (task.category === 'daily')  return c.submitted_at >= todayStart && c.status !== 'rejected'
-        if (task.category === 'weekly') return c.submitted_at >= weekStart  && c.status !== 'rejected'
-        return c.status !== 'rejected'
+        const compDate = (c as any).completion_date as string | undefined
+        if (task.category === 'daily') {
+          return compDate ? compDate === dateStr : c.submitted_at.startsWith(dateStr)
+        }
+        if (task.category === 'weekly') {
+          const ref = compDate ? new Date(compDate).toISOString() : c.submitted_at
+          return ref >= weekStart && ref <= weekEnd
+        }
+        return true // adhoc: any completion counts
       })
   }
 
-  async function markComplete(task: Task) {
-    setSubmitting(task.id)
-    await supabase.from('task_completions').insert({
-      task_id: task.id,
-      kid_username: username,
-      status: 'pending',
-    })
-    await fetchCompletions()
-    setSubmitting(null)
-  }
+  // Completion dates for calendar dots
+  const completionDates = [...new Set(
+    completions
+      .filter(c => c.status !== 'rejected')
+      .map(c => (c as any).completion_date as string | undefined ?? c.submitted_at.slice(0, 10))
+  )]
 
-  const accentClass = username === 'camden' ? 'text-game-camden' : 'text-game-ethan'
-  const siblingName = username === 'camden' ? 'Ethan' : 'Camden'
-
+  // Tasks visible in current tab
   const visibleTasks = tasks.filter(t =>
     t.assigned_to === viewUsername || t.assigned_to === 'both'
   )
@@ -128,6 +129,43 @@ export function KidDashboard() {
     cat,
     tasks: visibleTasks.filter(t => t.category === cat),
   })).filter(g => g.tasks.length > 0)
+
+  // Available tasks for own tab (no existing completion, can be selected)
+  function isAvailable(taskId: string): boolean {
+    return isOwn && activeTab === 'own' && !getCompletion(taskId, username!)
+  }
+
+  function toggleSelect(taskId: string) {
+    if (!isAvailable(taskId)) return
+    setSelectedTaskIds(ids =>
+      ids.includes(taskId) ? ids.filter(id => id !== taskId) : [...ids, taskId]
+    )
+  }
+
+  function selectAll() {
+    const available = visibleTasks.filter(t => isAvailable(t.id)).map(t => t.id)
+    setSelectedTaskIds(available)
+  }
+
+  async function submitSelected() {
+    if (selectedTaskIds.length === 0) return
+    setSubmitting(true)
+    const dateStr = format(selectedDate, 'yyyy-MM-dd')
+    const rows = selectedTaskIds.map(taskId => ({
+      task_id: taskId,
+      kid_username: username,
+      status: 'pending',
+      completion_date: dateStr,
+    }))
+    await supabase.from('task_completions').insert(rows)
+    setSelectedTaskIds([])
+    setSubmitSuccess(true)
+    setTimeout(() => setSubmitSuccess(false), 3000)
+    await fetchCompletions()
+    setSubmitting(false)
+  }
+
+  const availableCount = visibleTasks.filter(t => isAvailable(t.id)).length
 
   if (loading) {
     return (
@@ -143,18 +181,15 @@ export function KidDashboard() {
     <Layout title={`${user?.display_name}'s Quest`}>
       {/* Points header */}
       <div className="px-4 pt-4 pb-2">
-        <div className="card p-4 flex items-center justify-between bg-gradient-to-r from-game-gold/10 to-transparent border-game-gold/30 shadow-glow-gold">
+        <div className={`card p-4 flex items-center justify-between bg-gradient-to-r from-${accentColor}/10 to-transparent border-${accentColor}/30`}>
           <div>
             <p className="text-game-text-dim text-xs font-bold uppercase tracking-widest">Point Bank</p>
-            <p className={`font-game text-5xl ${accentClass}`}>
+            <p className={`font-game text-5xl text-${accentColor}`}>
               {points.toLocaleString()} <span className="text-game-gold text-3xl">⭐</span>
             </p>
           </div>
-          <button
-            onClick={clearNotifications}
-            className="relative p-3 rounded-xl bg-game-border hover:brightness-125 transition-all"
-          >
-            <Bell size={22} className={accentClass} />
+          <button onClick={clearNotifications} className="relative p-3 rounded-xl bg-game-border hover:brightness-125 transition-all">
+            <Bell size={22} className={`text-${accentColor}`} />
             {newApprovals > 0 && (
               <span className="absolute -top-1 -right-1 bg-game-danger text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
                 {newApprovals}
@@ -166,26 +201,67 @@ export function KidDashboard() {
 
       {/* Tabs */}
       <div className="px-4 py-2 flex gap-2">
-        <button
-          onClick={() => setActiveTab('own')}
+        <button onClick={() => { setActiveTab('own'); setSelectedTaskIds([]) }}
           className={`flex-1 py-2 rounded-xl font-bold text-sm transition-all ${
-            activeTab === 'own' ? `bg-${username === 'camden' ? 'game-camden' : 'game-ethan'}/20 ${accentClass} border border-current/30` : 'text-game-muted bg-game-border'
-          }`}
-        >
+            activeTab === 'own'
+              ? `bg-${accentColor}/20 text-${accentColor} border border-${accentColor}/30`
+              : 'text-game-muted bg-game-border'
+          }`}>
           My Tasks
         </button>
-        <button
-          onClick={() => setActiveTab('sibling')}
+        <button onClick={() => { setActiveTab('sibling'); setSelectedTaskIds([]) }}
           className={`flex-1 py-2 rounded-xl font-bold text-sm transition-all ${
-            activeTab === 'sibling' ? 'bg-game-master/20 text-game-master border border-game-master/30' : 'text-game-muted bg-game-border'
-          }`}
-        >
+            activeTab === 'sibling'
+              ? 'bg-game-master/20 text-game-master border border-game-master/30'
+              : 'text-game-muted bg-game-border'
+          }`}>
           {siblingName}'s Tasks
         </button>
       </div>
 
+      {/* Date navigator */}
+      <div className="px-4 py-2">
+        <DateNavigator
+          selectedDate={selectedDate}
+          onChange={setSelectedDate}
+          completionDates={completionDates}
+          accentColor={accentColor}
+        />
+      </div>
+
+      {/* Batch controls — own tab only */}
+      {isOwn && activeTab === 'own' && availableCount > 0 && (
+        <div className="px-4 py-1 flex items-center justify-between">
+          <button
+            onClick={selectAll}
+            className="flex items-center gap-1.5 text-xs font-bold text-game-text-dim hover:text-game-text transition-colors"
+          >
+            <CheckSquare size={14} />
+            Select All ({availableCount})
+          </button>
+          {selectedTaskIds.length > 0 && (
+            <button
+              onClick={() => setSelectedTaskIds([])}
+              className="flex items-center gap-1.5 text-xs font-bold text-game-muted hover:text-game-text transition-colors"
+            >
+              <Square size={14} />
+              Clear
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Success message */}
+      {submitSuccess && (
+        <div className="mx-4 my-1 bg-game-success/10 border border-game-success/30 rounded-xl p-3 text-center">
+          <p className="text-game-success font-bold text-sm">
+            🎉 Tasks submitted for approval!
+          </p>
+        </div>
+      )}
+
       {/* Task list */}
-      <div className="px-4 pb-4 flex flex-col gap-6">
+      <div className="px-4 pb-32 flex flex-col gap-6 mt-2">
         {tasksByCategory.length === 0 && (
           <div className="text-center py-16 text-game-muted">
             <p className="text-4xl mb-3">🎉</p>
@@ -198,21 +274,65 @@ export function KidDashboard() {
           <div key={cat}>
             <h2 className="section-title mb-3">{CATEGORY_LABELS[cat]}</h2>
             <div className="flex flex-col gap-3">
-              {catTasks.map(task => (
-                <TaskCard
-                  key={task.id}
-                  task={task}
-                  completion={getCompletion(task.id)}
-                  canComplete={isOwn && activeTab === 'own'}
-                  viewOnly={activeTab === 'sibling'}
-                  onComplete={() => markComplete(task)}
-                  loading={submitting === task.id}
-                />
-              ))}
+              {catTasks.map(task => {
+                const completion = getCompletion(task.id, viewUsername)
+                const available  = isAvailable(task.id)
+                const selected   = selectedTaskIds.includes(task.id)
+
+                return (
+                  <div
+                    key={task.id}
+                    onClick={() => available && toggleSelect(task.id)}
+                    className={`transition-all ${available ? 'cursor-pointer' : ''}`}
+                  >
+                    {/* Selection indicator */}
+                    {isOwn && activeTab === 'own' && available && (
+                      <div className={`card mb-[-8px] pb-4 pt-3 px-4 flex items-center gap-3 border-b-0 rounded-b-none
+                                        transition-all ${selected ? `border-${accentColor}/60 bg-${accentColor}/10` : ''}`}>
+                        <div className={`w-5 h-5 rounded flex items-center justify-center border-2 transition-all
+                                          ${selected
+                                            ? `bg-${accentColor} border-${accentColor}`
+                                            : 'border-game-muted'}`}>
+                          {selected && <span className="text-white text-xs font-bold">✓</span>}
+                        </div>
+                        <span className="text-xs font-bold text-game-text-dim">
+                          {selected ? 'Selected' : 'Tap to select'}
+                        </span>
+                      </div>
+                    )}
+
+                    <TaskCard
+                      task={task}
+                      completion={completion}
+                      canComplete={false}
+                      viewOnly={activeTab === 'sibling' || !isOwn}
+                      selected={selected}
+                      accentColor={accentColor}
+                    />
+                  </div>
+                )
+              })}
             </div>
           </div>
         ))}
       </div>
+
+      {/* Floating submit button */}
+      {selectedTaskIds.length > 0 && (
+        <div className="fixed bottom-20 left-4 right-4 z-20 animate-pop">
+          <button
+            onClick={submitSelected}
+            disabled={submitting}
+            className="w-full btn-primary py-4 text-lg flex items-center justify-center gap-3 shadow-glow-gold"
+          >
+            <Send size={20} />
+            {submitting
+              ? 'Submitting…'
+              : `Submit ${selectedTaskIds.length} Task${selectedTaskIds.length !== 1 ? 's' : ''} for Approval`
+            }
+          </button>
+        </div>
+      )}
     </Layout>
   )
 }

@@ -8,6 +8,8 @@ interface TaskCardProps {
   onComplete?: () => void
   loading?: boolean
   viewOnly?: boolean
+  selected?: boolean
+  accentColor?: string
 }
 
 const categoryColors: Record<string, string> = {
@@ -22,13 +24,13 @@ const categoryLabels: Record<string, string> = {
   adhoc:  '⚡ Special',
 }
 
-export function TaskCard({ task, completion, canComplete, onComplete, loading, viewOnly }: TaskCardProps) {
+export function TaskCard({ task, completion, canComplete, onComplete, loading, viewOnly, selected, accentColor }: TaskCardProps) {
   const status = completion?.status
 
   return (
     <div className={`card p-4 flex flex-col gap-3 transition-all ${
       status === 'approved' ? 'opacity-60' : ''
-    }`}>
+    } ${selected ? `border-${accentColor ?? 'game-gold'}/60 bg-${accentColor ?? 'game-gold'}/5` : ''}`}>
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-1">
