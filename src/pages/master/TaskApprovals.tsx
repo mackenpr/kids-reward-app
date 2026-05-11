@@ -42,6 +42,7 @@ export function TaskApprovals() {
       console.error('fetchPending error:', e)
     } finally {
       setLoading(false)
+    }
   }
 
   // --- Single approve ---
