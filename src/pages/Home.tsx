@@ -61,7 +61,7 @@ export function Home() {
     const err = await loginKid(selected, submittedPin)
     setLoading(false)
     if (err) {
-      setError('Wrong PIN. Try again!')
+      setError(err.includes('timed out') ? '⏱ Connection timed out. Tap a number to try again.' : 'Wrong PIN. Try again!')
       setPin('')
     } else {
       navigate(`/kid/${selected}`)
@@ -75,7 +75,7 @@ export function Home() {
     const err = await loginMaster(email, password)
     setLoading(false)
     if (err) {
-      setError('Wrong email or password.')
+      setError(err.includes('timed out') ? '⏱ Connection timed out. Please try again.' : 'Wrong email or password.')
     } else {
       navigate('/master')
     }
