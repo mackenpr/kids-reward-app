@@ -8,6 +8,43 @@ import * as XLSX from 'xlsx'
 
 interface CompletionWithTask extends TaskCompletion { task?: Task }
 
+interface GroupedTransaction {
+  id: string
+  description: string
+  kid_username: string
+  created_at: string
+  type: string
+  dollarAmount: number
+  qualityAmount: number
+}
+
+function groupTransactions(transactions: PointTransaction[]): GroupedTransaction[] {
+  const map = new Map<string, GroupedTransaction>()
+
+  for (const t of transactions) {
+    const key = t.related_completion_id ?? t.id
+    if (map.has(key)) {
+      const g = map.get(key)!
+      if (t.currency === 'dollar')       g.dollarAmount  += t.type === 'redeemed' ? -t.amount : t.amount
+      else                               g.qualityAmount += t.type === 'redeemed' ? -t.amount : t.amount
+    } else {
+      map.set(key, {
+        id: key,
+        description: t.description,
+        kid_username: t.kid_username,
+        created_at: t.created_at,
+        type: t.type,
+        dollarAmount:  t.currency === 'dollar'       ? (t.type === 'redeemed' ? -t.amount : t.amount) : 0,
+        qualityAmount: t.currency === 'quality_time' ? (t.type === 'redeemed' ? -t.amount : t.amount) : 0,
+      })
+    }
+  }
+
+  return Array.from(map.values()).sort(
+    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  )
+}
+
 export function Reports() {
   const [transactions, setTransactions] = useState<PointTransaction[]>([])
   const [completions, setCompletions] = useState<CompletionWithTask[]>([])
@@ -187,19 +224,30 @@ export function Reports() {
           </div>
         </div>
 
-        {/* Recent transactions */}
+        {/* Recent transactions — grouped by completion so each task shows once */}
         <div>
           <h2 className="section-title mb-3">Recent Transactions</h2>
           <div className="flex flex-col gap-2">
-            {transactions.slice(0, 20).map(t => (
-              <div key={t.id} className="card p-3 flex items-center justify-between">
-                <div>
-                  <p className="font-bold text-sm text-game-text">{t.description}</p>
-                  <p className="text-game-text-dim text-xs capitalize">{t.kid_username} · {format(new Date(t.created_at), 'MMM d')}</p>
+            {groupTransactions(transactions).slice(0, 20).map(g => (
+              <div key={g.id} className="card p-3 flex items-center justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-sm text-game-text truncate">{g.description}</p>
+                  <p className="text-game-text-dim text-xs capitalize">
+                    {g.kid_username} · {format(new Date(g.created_at), 'MMM d')}
+                  </p>
                 </div>
-                <span className={`font-num text-lg ${t.type === 'redeemed' ? 'text-game-danger' : 'text-game-success'}`}>
-                  {t.type === 'redeemed' ? '-' : '+'}{t.amount}⭐
-                </span>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  {g.dollarAmount !== 0 && (
+                    <span className={`font-num text-sm ${g.type === 'redeemed' ? 'text-game-danger' : 'text-game-gold'}`}>
+                      {g.type === 'redeemed' ? '-' : '+'}{Math.abs(g.dollarAmount)}💰
+                    </span>
+                  )}
+                  {g.qualityAmount !== 0 && (
+                    <span className={`font-num text-sm ${g.type === 'redeemed' ? 'text-game-danger' : 'text-game-master'}`}>
+                      {g.type === 'redeemed' ? '-' : '+'}{Math.abs(g.qualityAmount)}⭐
+                    </span>
+                  )}
+                </div>
               </div>
             ))}
           </div>
