@@ -55,7 +55,7 @@ export function PointBank() {
             <span className="text-2xl">💰</span>
             <h2 className="font-game text-2xl text-game-gold">Dollar Bank</h2>
           </div>
-          <p className={`font-game text-6xl ${accentClass}`}>
+          <p className={`font-num text-6xl ${accentClass}`}>
             {toDollars(balances.dollarBalance)}
           </p>
           <p className="text-game-text-dim text-sm mt-1">
@@ -69,7 +69,7 @@ export function PointBank() {
               { label: 'Month',  val: earned(monthStart,  'dollar') },
             ].map(s => (
               <div key={s.label} className="bg-game-border rounded-xl p-2 text-center">
-                <p className="font-game text-lg text-game-gold">{toDollars(s.val)}</p>
+                <p className="font-num text-lg text-game-gold">{toDollars(s.val)}</p>
                 <p className="text-game-text-dim text-xs">{s.label}</p>
               </div>
             ))}
@@ -89,7 +89,7 @@ export function PointBank() {
             <span className="text-2xl">⭐</span>
             <h2 className="font-game text-2xl text-game-master">Activity Bank</h2>
           </div>
-          <p className={`font-game text-6xl ${accentClass}`}>
+          <p className={`font-num text-6xl ${accentClass}`}>
             {balances.qualityBalance}
           </p>
           <p className="text-game-text-dim text-sm mt-1">
@@ -117,7 +117,7 @@ export function PointBank() {
               { label: 'Month',  val: earned(monthStart,  'quality_time') },
             ].map(s => (
               <div key={s.label} className="bg-game-border rounded-xl p-2 text-center">
-                <p className="font-game text-lg text-game-master">{s.val}</p>
+                <p className="font-num text-lg text-game-master">{s.val}</p>
                 <p className="text-game-text-dim text-xs">{s.label}</p>
               </div>
             ))}
@@ -147,7 +147,7 @@ export function PointBank() {
                     </p>
                   </div>
                   <div className="flex items-center gap-1">
-                    <span className={`font-game text-lg ${t.type === 'redeemed' ? 'text-game-danger' : t.currency === 'dollar' ? 'text-game-gold' : 'text-game-master'}`}>
+                    <span className={`font-num text-lg ${t.type === 'redeemed' ? 'text-game-danger' : t.currency === 'dollar' ? 'text-game-gold' : 'text-game-master'}`}>
                       {t.type === 'redeemed' ? '-' : '+'}{t.amount}
                     </span>
                     <span className="text-xs">{t.currency === 'dollar' ? '💰' : '⭐'}</span>

@@ -187,8 +187,8 @@ export function TaskEditor() {
               <div key={task.id} className={`card p-3 flex items-center gap-3 ${!task.is_active ? 'opacity-50' : ''}`}>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="text-game-gold font-game text-xs">💰{task.dollar_points ?? 0}</span>
-                    <span className="text-game-master font-game text-xs">⭐{task.quality_points ?? 0}</span>
+                    <span className="text-game-gold font-num text-xs">💰{task.dollar_points ?? 0}</span>
+                    <span className="text-game-master font-num text-xs">⭐{task.quality_points ?? 0}</span>
                     <span className="text-game-text-dim text-xs capitalize">{task.category}</span>
                     <span className="text-game-text-dim text-xs">· {task.assigned_to === 'both' ? 'Both' : task.assigned_to}</span>
                   </div>

@@ -53,16 +53,16 @@ export function TaskCard({ task, completion, canComplete, onComplete, loading, v
             <>
               <div className="flex items-center gap-1 bg-game-gold/10 border border-game-gold/30 rounded-lg px-2 py-1">
                 <span className="text-xs">💰</span>
-                <span className="font-game text-game-gold text-base">{task.dollar_points}</span>
+                <span className="font-num text-game-gold text-base">{task.dollar_points}</span>
               </div>
               <div className="flex items-center gap-1 bg-game-master/10 border border-game-master/30 rounded-lg px-2 py-1">
                 <span className="text-xs">⭐</span>
-                <span className="font-game text-game-master text-base">{task.quality_points}</span>
+                <span className="font-num text-game-master text-base">{task.quality_points}</span>
               </div>
             </>
           ) : (
             <div className="flex flex-col items-center justify-center bg-game-gold/10 border border-game-gold/30 rounded-xl px-3 py-2 min-w-[60px]">
-              <span className="font-game text-game-gold text-lg leading-tight">{task.points}</span>
+              <span className="font-num text-game-gold text-lg leading-tight">{task.points}</span>
               <span className="text-game-gold text-xs">pts</span>
             </div>
           )}

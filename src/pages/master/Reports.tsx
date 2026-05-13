@@ -125,7 +125,7 @@ export function Reports() {
                 <span>{k.emoji}</span>
                 <span className={`font-game text-lg text-${k.color}`}>{k.name}</span>
               </div>
-              <p className={`font-game text-3xl text-${k.color}`}>{kidBalance(k.kid).toLocaleString()}</p>
+              <p className={`font-num text-3xl text-${k.color}`}>{kidBalance(k.kid).toLocaleString()}</p>
               <p className="text-game-text-dim text-xs">balance</p>
               <p className="text-game-success text-sm font-bold mt-1">+{kidEarned(k.kid)} earned</p>
             </div>
@@ -197,7 +197,7 @@ export function Reports() {
                   <p className="font-bold text-sm text-game-text">{t.description}</p>
                   <p className="text-game-text-dim text-xs capitalize">{t.kid_username} · {format(new Date(t.created_at), 'MMM d')}</p>
                 </div>
-                <span className={`font-game text-lg ${t.type === 'redeemed' ? 'text-game-danger' : 'text-game-success'}`}>
+                <span className={`font-num text-lg ${t.type === 'redeemed' ? 'text-game-danger' : 'text-game-success'}`}>
                   {t.type === 'redeemed' ? '-' : '+'}{t.amount}⭐
                 </span>
               </div>

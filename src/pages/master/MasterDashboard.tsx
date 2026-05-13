@@ -101,7 +101,7 @@ export function MasterDashboard() {
                 {pendingTasks} task{pendingTasks !== 1 ? 's' : ''} + {pendingRedemptions} redemption{pendingRedemptions !== 1 ? 's' : ''} waiting
               </p>
             </div>
-            <span className="font-game text-3xl text-game-pending">{totalPending}</span>
+            <span className="font-num text-3xl text-game-pending">{totalPending}</span>
           </div>
         )}
 
@@ -129,7 +129,7 @@ export function MasterDashboard() {
                   {/* Dollar */}
                   <div className="bg-game-gold/10 border border-game-gold/20 rounded-xl p-3">
                     <p className="text-game-gold text-xs font-bold mb-1">💰 Dollar Bank</p>
-                    <p className={`font-game text-2xl text-${k.color}`}>{toDollars(k.bal.dollarBalance)}</p>
+                    <p className={`font-num text-2xl text-${k.color}`}>{toDollars(k.bal.dollarBalance)}</p>
                     <p className="text-game-text-dim text-xs mt-1">{k.bal.dollarBalance} pts</p>
                     <div className="flex justify-between text-xs text-game-text-dim mt-2 pt-2 border-t border-game-border">
                       <span>+{toDollars(k.bal.dollarEarned)} earned</span>
@@ -140,7 +140,7 @@ export function MasterDashboard() {
                   {/* Quality time */}
                   <div className="bg-game-master/10 border border-game-master/20 rounded-xl p-3">
                     <p className="text-game-master text-xs font-bold mb-1">⭐ Activity Bank</p>
-                    <p className={`font-game text-2xl text-${k.color}`}>{k.bal.qualityBalance} pts</p>
+                    <p className={`font-num text-2xl text-${k.color}`}>{k.bal.qualityBalance} pts</p>
                     <p className="text-game-text-dim text-xs mt-1">
                       {Math.floor(k.bal.qualityBalance / 240)} full {Math.floor(k.bal.qualityBalance / 240) === 1 ? 'activity' : 'activities'}
                     </p>

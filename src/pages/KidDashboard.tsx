@@ -148,11 +148,11 @@ export function KidDashboard() {
       <div className="px-4 pt-4 pb-2 grid grid-cols-2 gap-3">
         <div className={`card p-3 border-game-gold/30 bg-game-gold/5`}>
           <p className="text-game-text-dim text-xs font-bold">💰 Dollar Bank</p>
-          <p className={`font-game text-3xl text-${accentColor}`}>{toDollars(balances.dollarBalance)}</p>
+          <p className={`font-num text-3xl text-${accentColor}`}>{toDollars(balances.dollarBalance)}</p>
         </div>
         <div className="card p-3 border-game-master/30 bg-game-master/5 relative">
           <p className="text-game-text-dim text-xs font-bold">⭐ Activity Bank</p>
-          <p className={`font-game text-3xl text-${accentColor}`}>{balances.qualityBalance}<span className="text-base"> pts</span></p>
+          <p className={`font-num text-3xl text-${accentColor}`}>{balances.qualityBalance}<span className="text-base"> pts</span></p>
           {newApprovals > 0 && (
             <button onClick={clearNotifications} className="absolute top-2 right-2">
               <Bell size={16} className={`text-${accentColor}`} />

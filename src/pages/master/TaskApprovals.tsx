@@ -242,10 +242,10 @@ export function TaskApprovals() {
                         </span>
                         <div className="flex gap-2">
                           <div className="text-right">
-                            <p className="font-game text-lg text-game-gold">{c.task.dollar_points ?? c.task.points} 💰</p>
+                            <p className="font-num text-lg text-game-gold">{c.task.dollar_points ?? c.task.points} 💰</p>
                           </div>
                           <div className="text-right">
-                            <p className="font-game text-lg text-game-master">{c.task.quality_points ?? 0} ⭐</p>
+                            <p className="font-num text-lg text-game-master">{c.task.quality_points ?? 0} ⭐</p>
                           </div>
                         </div>
                       </div>

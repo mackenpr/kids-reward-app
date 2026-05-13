@@ -65,6 +65,11 @@
     @apply text-game-gold font-game text-xl tracking-wide;
   }
 
+  /* Use for all numeric displays — Nunito is much clearer than Bangers for digits */
+  .font-num {
+    @apply font-body font-extrabold;
+  }
+
   .input {
     @apply w-full bg-game-border border border-game-border rounded-xl px-4 py-3
            text-game-text placeholder-game-muted focus:outline-none

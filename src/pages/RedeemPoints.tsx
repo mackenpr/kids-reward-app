@@ -119,7 +119,7 @@ export function RedeemPoints() {
           <p className="text-game-text-dim text-xs font-bold uppercase tracking-widest">
             {tab === 'dollar' ? 'Dollar Balance' : 'Activity Points'}
           </p>
-          <p className={`font-game text-5xl ${accentClass} mt-1`}>
+          <p className={`font-num text-5xl ${accentClass} mt-1`}>
             {tab === 'dollar' ? toDollars(currentBalance) : `${currentBalance} pts`}
           </p>
         </div>
@@ -150,7 +150,7 @@ export function RedeemPoints() {
                       )}
                     </div>
                     <div className="flex flex-col items-center gap-2">
-                      <span className={`font-game text-xl ${accentClass}`}>{cost} pts</span>
+                      <span className={`font-num text-xl ${accentClass}`}>{cost} pts</span>
                       <button
                         disabled={!canAfford || submitting}
                         onClick={() => submitRedemption(prize.name, cost)}

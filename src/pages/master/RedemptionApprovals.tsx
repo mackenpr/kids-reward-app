@@ -97,7 +97,7 @@ export function RedemptionApprovals() {
                       <p className="text-game-text-dim text-xs">{format(new Date(r.submitted_at), 'MMM d, h:mm a')}</p>
                     </div>
                     <div className="text-right">
-                      <p className="font-game text-2xl text-game-gold">{r.points_amount}</p>
+                      <p className="font-num text-2xl text-game-gold">{r.points_amount}</p>
                       <p className="text-game-text-dim text-xs">pts</p>
                     </div>
                   </div>
@@ -147,7 +147,7 @@ export function RedemptionApprovals() {
                     </div>
                     <p className="font-bold text-sm text-game-text truncate">{r.prize_description}</p>
                   </div>
-                  <span className="font-game text-game-gold">{r.points_amount}⭐</span>
+                  <span className="font-num text-game-gold">{r.points_amount}⭐</span>
                 </div>
               ))}
             </div>
