@@ -126,7 +126,7 @@ export function TaskApprovals() {
 
   const allSelected = selectedIds.length === pending.length && pending.length > 0
   const kidColor = (u: string) => u === 'camden' ? 'text-game-camden' : 'text-game-ethan'
-  const kidEmoji = (u: string) => u === 'camden' ? '⚔️' : '⚡'
+  const kidEmoji = (u: string) => u === 'camden' ? '⚔️' : '🐿️'
 
   if (loading) {
     return (

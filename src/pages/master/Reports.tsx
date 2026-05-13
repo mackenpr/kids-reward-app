@@ -118,7 +118,7 @@ export function Reports() {
         <div className="grid grid-cols-2 gap-3">
           {[
             { kid: 'camden', name: 'Camden', emoji: '⚔️', color: 'game-camden' },
-            { kid: 'ethan',  name: 'Ethan',  emoji: '⚡', color: 'game-ethan' },
+            { kid: 'ethan',  name: 'Ethan',  emoji: '🐿️', color: 'game-ethan' },
           ].map(k => (
             <div key={k.kid} className={`card p-4 border-${k.color}/30`}>
               <div className="flex items-center gap-2 mb-2">

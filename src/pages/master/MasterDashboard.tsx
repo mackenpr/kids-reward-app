@@ -126,7 +126,7 @@ export function MasterDashboard() {
           <div className="grid grid-cols-2 gap-3">
             {[
               { name: 'Camden', stats: camden, emoji: '⚔️', color: 'game-camden' },
-              { name: 'Ethan',  stats: ethan,  emoji: '⚡', color: 'game-ethan' },
+              { name: 'Ethan',  stats: ethan,  emoji: '🐿️', color: 'game-ethan' },
             ].map(k => (
               <div key={k.name} className={`card p-4 border-${k.color}/30 bg-${k.color}/5`}>
                 <div className="flex items-center gap-2 mb-3">

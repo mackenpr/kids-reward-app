@@ -147,7 +147,7 @@ export function Setup() {
 
           {/* Ethan */}
           <div>
-            <h2 className="font-game text-xl text-game-ethan mb-3">⚡ Ethan's PIN</h2>
+            <h2 className="font-game text-xl text-game-ethan mb-3">🐿️ Ethan's PIN</h2>
             <input
               type="number"
               value={ethanPin}

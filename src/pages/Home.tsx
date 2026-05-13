@@ -19,7 +19,7 @@ const characters = [
   {
     id: 'ethan' as const,
     name: 'Ethan',
-    emoji: '⚡',
+    emoji: '🐿️',
     sub: 'Age 7',
     color: 'game-ethan',
     gradient: 'from-emerald-900/60 to-emerald-600/20',
