@@ -68,7 +68,7 @@ export function PinPad({ onSubmit, loading, error, label = 'Enter PIN' }: PinPad
               key={i}
               onClick={() => press(key)}
               disabled={loading}
-              className="w-16 h-16 rounded-2xl bg-game-border font-game text-2xl text-game-text
+              className="w-16 h-16 rounded-2xl bg-game-border font-body font-extrabold text-2xl text-game-text
                          active:scale-95 active:bg-game-gold active:text-black
                          transition-all hover:brightness-125 disabled:opacity-40"
             >
